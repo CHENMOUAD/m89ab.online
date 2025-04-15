@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Stock Analysis - Real-time Market Insights</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+        
+        :root {
+            --navy: #000080;
+            --navy-dark: #00005a;
+            --navy-light: #0000a0;
+            --off-white: #F5F5F5;
+            --accent: #00FFFF;
+            --accent-dark: #00CCCC;
+            --accent-glow: rgba(0, 255, 255, 0.3);
+            --highlight: #FF007A;
+            --highlight-glow: rgba(255, 0, 122, 0.3);
+            --success: #00E676;
+            --warning: #FFEB3B;
+            --dark: #121212;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            --shadow-strong: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        html, body {
+            background-color: var(--navy);
+            color: var(--off-white);
+            font-size: 16px;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Grid background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background-image: 
+                linear-gradient(rgba(0, 0, 128, 0.8) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 128, 0.8) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+        
+        /* Light beam effect */
+        .light-beam {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 50% 0%, rgba(0, 255, 255, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        /* Glow orbs for decoration */
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            z-index: 0;
+        }
+        
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background-color: var(--accent-glow);
+            top: 10%;
+            right: -200px;
+        }
+        
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background-color: var(--highlight-glow);
+            bottom: 20%;
+            left: -150px;
+        }
+        
+        /* Layout Components */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        section {
+            padding: 80px 0;
+            position: relative;
+        }
+        
+        /* Header Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+        
+        .hero-content {
+            position: relative;
+        }
+        
+        .logo-wrapper {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 128, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 50px;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            margin-bottom: 30px;
+        }
+        
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--navy);
+        }
+        
+        .logo-text {
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 24px;
+            background: linear-gradient(to right, var(--off-white), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .hero-description {
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            color: rgba(245, 245, 245, 0.8);
+            max-width: 600px;
+        }
+        
+        .hero-image {
+            position: relative;
+        }
+        
+        .hero-image img {
+            width: 100%;
+            max-width: 550px;
+            border-radius: 20px;
+            box-shadow: var(--shadow-strong);
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+        }
+        
+        .image-glow {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: calc(100% - 20px);
+            height: calc(100% - 20px);
+            max-width: 530px;
+            border-radius: 20px;
+            background: linear-gradient(to right, var(--accent-glow), var(--highlight-glow));
+            filter: blur(30px);
+            z-index: 0;
+            opacity: 0.5;
+        }
+        
+        /* Stats display */
+        .stats-bar {
+            display: flex;
+            gap: 30px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: rgba(245, 245, 245, 0.6);
+        }
+        
+        /* Analysis Tool Section */
+        .analysis-tool {
+            background: rgba(0, 0, 128, 0.4);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            margin-top: 30px;
+            position: relative;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .analysis-tool::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(to right, transparent, rgba(0, 255, 255, 0.1), transparent),
+                linear-gradient(to bottom, transparent, rgba(255, 0, 122, 0.05), transparent);
+            z-index: -1;
+        }
+        
+        .tool-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .tool-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(to right, var(--off-white), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .tool-description {
+            font-size: 1.1rem;
+            color: rgba(245, 245, 245, 0.8);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-control {
+            flex: 1;
+            background: rgba(245, 245, 245, 0.05);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            height: 60px;
+            padding: 0 20px;
+            font-size: 1.1rem;
+            color: var(--off-white);
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        
+        .form-control::placeholder {
+            color: rgba(245, 245, 245, 0.4);
+        }
+        
+        .btn {
+            background: linear-gradient(to right, var(--accent), var(--accent-dark));
+            color: var(--navy-dark);
+            border: none;
+            border-radius: 12px;
+            height: 60px;
+            padding: 0 30px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.5), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 255, 255, 0.4);
+        }
+        
+        .btn-highlight {
+            background: linear-gradient(to right, var(--highlight), #FF3998);
+            color: var(--off-white);
+            box-shadow: 0 5px 15px rgba(255, 0, 122, 0.3);
+        }
+        
+        .btn-highlight:hover {
+            box-shadow: 0 10px 25px rgba(255, 0, 122, 0.5);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: var(--navy-dark);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            box-shadow: var(--shadow-strong);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(245, 245, 245, 0.1);
+            color: var(--off-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            background: rgba(245, 245, 245, 0.2);
+            transform: rotate(90deg);
+        }
+        
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: var(--off-white);
+            text-align: center;
+        }
+        
+        .modal-subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+            color: rgba(245, 245, 245, 0.7);
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(245, 245, 245, 0.1);
+            border-radius: 10px;
+            margin: 30px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(to right, var(--accent), var(--highlight));
+            border-radius: 10px;
+            transition: width 2s ease;
+        }
+        
+        .analysis-items {
+            margin-bottom: 30px;
+        }
+        
+        .analysis-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(245, 245, 245, 0.05);
+            border-radius: 12px;
+        }
+        
+        .analysis-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--navy-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
+        .analysis-text {
+            flex: 1;
+            color: rgba(245, 245, 245, 0.8);
+        }
+        
+        .completed-content {
+            text-align: center;
+            display: none;
+        }
+        
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(0, 230, 118, 0.1);
+            color: var(--success);
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+        }
+        
+        .offer-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            background: linear-gradient(to right, var(--highlight), #FF3998);
+            color: var(--off-white);
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-top: 15px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 0, 122, 0.7);
+            }
+            70% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(255, 0, 122, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 0, 122, 0);
+            }
+        }
+        
+        /* Footer */
+        .footer {
+            background: rgba(0, 0, 80, 0.6);
+            backdrop-filter: blur(20px);
+            padding: 40px 0;
+            margin-top: 80px;
+            border-top: 1px solid rgba(0, 255, 255, 0.1);
+        }
+        
+        .disclaimer {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            color: rgba(245, 245, 245, 0.6);
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+        
+        .disclaimer-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--off-white);
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 1s ease-out forwards;
+        }
+        
+        .slide-up {
+            animation: slideUp 1s ease-out forwards;
+        }
+        
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            
+            .hero-title {
+                font-size: 3rem;
+            }
+            
+            .hero-image {
+                order: -1;
+            }
+            
+            .stats-bar {
+                justify-content: space-between;
+            }
+            
+            .analysis-tool {
+                padding: 30px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .tool-title {
+                font-size: 1.8rem;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .stats-bar {
+                gap: 20px;
+            }
+            
+            .modal-content {
+                padding: 30px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .hero-title {
+                font-size: 2.2rem;
+            }
+            
+            .analysis-item {
+                padding: 12px;
+            }
+            
+            .analysis-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
+            
+            .disclaimer {
+                padding: 0 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="grid-bg"></div>
+    <div class="light-beam"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-content slide-up">
+                    <div class="logo-wrapper">
+                        <div class="logo-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="logo-text">QUANTUM INSIGHTS</div>
+                    </div>
+                    
+                    <h1 class="hero-title">AI-Powered Market Insights For Strategic Investors</h1>
+                    <p class="hero-description">In rapidly changing markets, accurate stock analysis is crucial. Our AI system combines real-time news and technical data to deliver detailed reports in just 2 seconds after entering a stock code. Over 40,632 users are already leveraging this free analysis service to capture market opportunities.</p>
+                    
+                    
+                </div>
+                
+                <div class="hero-image fade-in delay-400">
+                    <img src="img/2.jpg" alt="AI Stock Analysis Dashboard">
+                    <div class="image-glow"></div>
+                </div>
+            </div>
+            
+            <!-- Analysis Tool -->
+            <div class="analysis-tool slide-up delay-400">
+                <div class="tool-header">
+                    <h2 class="tool-title">Get Your Free AI Stock Analysis</h2>
+                    <p class="tool-description">Enter a stock symbol or company name to receive comprehensive analysis instantly</p>
+                </div>
+                
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Enter stock symbol (e.g., AAPL, TSLA)" id="stock-input">
+                    <button class="btn" onclick="analyzeStock()">
+                        <i class="fas fa-search"></i> Analyze Stock
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="disclaimer">
+                <h3 class="disclaimer-title">Disclaimer</h3>
+                <p>The information provided on this platform is for educational purposes only and does not constitute investment advice. All analysis is based on historical data and current market conditions, which may not be indicative of future performance.</p>
+                <p>Investing in securities involves risk, including the potential loss of principal. Before making any investment decisions, consult with a qualified financial advisor. Our AI-generated reports should be used as one of many tools in your investment research process.</p>
+                <p>This service complies with Google's financial products and services policy. We do not recommend specific securities, offer investment advisory services, or sell financial products. The platform is designed to provide educational information and analytical tools to help users conduct their own research.</p>
+                <p>By using this service, you acknowledge that you are responsible for your own investment decisions and that you understand the risks involved in investing in securities markets.</p>
+                <p>© 2023 Quantum Insights. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Analysis Modal -->
+    <div class="modal" id="analysis-modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            
+            <!-- Processing Content -->
+            <div class="processing-content">
+                <h3 class="modal-title">AI Analysis in Progress</h3>
+                <p class="modal-subtitle">Collecting and analyzing data from multiple sources</p>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="analysis-progress"></div>
+                </div>
+                
+                <div class="analysis-items">
+                    <div class="analysis-item">
+                        <div class="analysis-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="analysis-text">Market Analysis: Evaluating current market conditions and sector trends</div>
+                    </div>
+                    
+                    <div class="analysis-item">
+                        <div class="analysis-icon">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <div class="analysis-text">News Analysis: Processing latest news and corporate announcements</div>
+                    </div>
+                    
+                    <div class="analysis-item">
+                        <div class="analysis-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <div class="analysis-text">Historical Data: Comparing past patterns with current conditions</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Completed Content -->
+            <div class="completed-content" id="completed-content">
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3 class="modal-title">Your Stock Analysis is Ready</h3>
+                <p class="modal-subtitle">Your comprehensive stock analysis report has been prepared. Click the button below to receive your report.</p>
+                
+                <button class="btn btn-highlight" onclick="opensite()">
+                    <i class="fab fa-line"></i> Receive Your Analysis Report
+                </button>
+                
+                <div class="offer-badge">
+                    <i class="fas fa-gift"></i> Plus 10 High-Potential Stocks (35 spots left)
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function analyzeStock() {
+            const stockInput = document.getElementById('stock-input').value.trim();
+            if (!stockInput) {
+                alert('Please enter a stock symbol or company name');
+                return;
+            }
+            
+            // Show the modal
+            document.getElementById('analysis-modal').style.display = 'flex';
+            
+            // Animate the progress bar
+            const progressBar = document.getElementById('analysis-progress');
+            progressBar.style.width = '0%';
+            
+            setTimeout(() => {
+                progressBar.style.width = '30%';
+            }, 300);
+            
+            setTimeout(() => {
+                progressBar.style.width = '60%';
+            }, 800);
+            
+            setTimeout(() => {
+                progressBar.style.width = '90%';
+            }, 600);
+            
+            setTimeout(() => {
+                progressBar.style.width = '100%';
+            }, 800);
+            
+            // Show the completed content after 2 seconds
+            setTimeout(() => {
+                document.querySelector('.processing-content').style.display = 'none';
+                document.getElementById('completed-content').style.display = 'block';
+            }, 1500);
+        }
+        
+        function closeModal() {
+            document.getElementById('analysis-modal').style.display = 'none';
+            document.querySelector('.processing-content').style.display = 'block';
+            document.getElementById('completed-content').style.display = 'none';
+        }
+        
+        function opensite() {
+            window.open('https://line.me/your_line_link', '_blank');
+        }
+    </script>
+</body>
+</html>
